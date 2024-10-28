@@ -1,3 +1,12 @@
+using Azure;
+using Azure.Data.Tables;
+using Azure.Data.Tables.Models;
+using System.Net;
+using System.Net.Http.Json;
+using System.Net.Mail;
+using System.Runtime.CompilerServices;
+using weather_service.Models;
+
 namespace weather_service
 {
     public class Worker : BackgroundService
@@ -11,13 +20,72 @@ namespace weather_service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                if (_logger.IsEnabled(LogLevel.Information))
+                Weather? weather = await GetWeather(stoppingToken);
+
+                if (weather == null)
                 {
-                    _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                    _logger.LogError("Failed to get weather forcast");
+                    return;
                 }
-                await Task.Delay(1000, stoppingToken);
+
+                Day day = weather.forecast.forecastday[0].day;
+
+                TableServiceClient tableServiceClient = new("***REMOVED***");
+                Response<TableItem> table = await tableServiceClient.CreateTableIfNotExistsAsync("Emails", stoppingToken);
+
+                TableClient tableClient = tableServiceClient.GetTableClient(table.Value.Name);
+
+                ConfiguredCancelableAsyncEnumerable<Email> emails = tableClient.QueryAsync<Email>(maxPerPage: 1000, cancellationToken: stoppingToken)
+                    .AsAsyncEnumerable()
+                    .ConfigureAwait(false);
+
+                await foreach (Email email in emails)
+                {
+                    SendEmail(email.EmailAddress, "Weather Notification", $"Weather is ${day.maxtemp_c}°/${day.mintemp_c}°");
+                }
+            }
+            catch (Exception x)
+            {
+                _logger.LogCritical(x, "Error in ExecuteAsync");
+            }
+        }
+
+        private async Task<Weather?> GetWeather(CancellationToken stoppingToken)
+        {
+            using HttpClient httpClient = new();
+
+            HttpResponseMessage httpResponse = await httpClient.GetAsync("***REMOVED***", stoppingToken);
+
+            return await httpResponse.Content.ReadFromJsonAsync<Weather>(cancellationToken: stoppingToken);
+        }
+
+        private async void SendEmail(string toAddress, string subject, string body)
+        {
+            try
+            {
+                MailMessage mail = new()
+                {
+                    From = new MailAddress("***REMOVED***"),
+                    Subject = subject,
+                    Body = body
+                };
+
+                mail.To.Add(toAddress);
+
+                SmtpClient smtpClient = new("smtp.azurecomm.net", 587)
+                {
+                    Credentials = new NetworkCredential("***REMOVED***", "***REMOVED***"),
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network
+                };
+
+                await smtpClient.SendMailAsync(mail);
+            }
+            catch (Exception x)
+            {
+                _logger.LogCritical(x, "Error in SendEmail");
             }
         }
     }
