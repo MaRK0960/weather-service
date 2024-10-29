@@ -43,7 +43,10 @@ namespace weather_service
 
                 await foreach (Email email in emails)
                 {
-                    SendEmail(email.EmailAddress, "Weather Notification", $"Weather is ${day.maxtemp_c}°/${day.mintemp_c}°");
+                    SendEmail(email.EmailAddress,
+                        "Weather Notification",
+                        $"Now ${weather.current.temp_c:0.0}°" +
+                        $"Today ${day.maxtemp_c:0.0}°/${day.mintemp_c:0.0}°");
                 }
             }
             catch (Exception x)

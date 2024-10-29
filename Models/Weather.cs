@@ -2,7 +2,13 @@
 {
     public class Weather
     {
+        public Now current { get; set; }
         public Forecast forecast { get; set; }
+    }
+
+    public class Now
+    {
+        public float temp_c { get; set; }
     }
 
     public class Forecast
