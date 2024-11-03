@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.Mail;
 using System.Runtime.CompilerServices;
+using System.Text;
 using weather_service.Models;
 
 namespace weather_service
@@ -45,8 +46,8 @@ namespace weather_service
                 {
                     await SendEmail(email.EmailAddress,
                         "Weather Notification",
-                        $"Now {weather.current.temp_c:0.0}°\n" +
-                        $"Today {day.maxtemp_c:0.0}°/{day.mintemp_c:0.0}°");
+                        $"Now {weather.current.temp_c:0.0}\u00B0C\n" +
+                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C");
                 }
 
                 Environment.Exit(0);
@@ -70,14 +71,19 @@ namespace weather_service
         {
             try
             {
+                _logger.LogInformation(body);
+
                 MailMessage mail = new()
                 {
+                    BodyEncoding = Encoding.UTF8,
+                    SubjectEncoding = Encoding.UTF8,
                     From = new MailAddress("***REMOVED***"),
                     Subject = subject,
                     Body = body
                 };
 
                 mail.To.Add(toAddress);
+                mail.Headers.Add("Content-Type", "text/html; charset=utf-8");
 
                 SmtpClient smtpClient = new("smtp.azurecomm.net", 587)
                 {

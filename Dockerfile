@@ -6,7 +6,9 @@
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/runtime:8.0-nanoserver-1809 AS base
 WORKDIR /app
-
+# Set UTF-8 locale to ensure proper encoding
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:8.0-nanoserver-1809 AS build
