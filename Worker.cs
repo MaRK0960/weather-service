@@ -43,11 +43,13 @@ namespace weather_service
 
                 await foreach (Email email in emails)
                 {
-                    SendEmail(email.EmailAddress,
+                    await SendEmail(email.EmailAddress,
                         "Weather Notification",
-                        $"Now ${weather.current.temp_c:0.0}°" +
-                        $"Today ${day.maxtemp_c:0.0}°/${day.mintemp_c:0.0}°");
+                        $"Now {weather.current.temp_c:0.0}°\n" +
+                        $"Today {day.maxtemp_c:0.0}°/{day.mintemp_c:0.0}°");
                 }
+
+                Environment.Exit(0);
             }
             catch (Exception x)
             {
@@ -64,7 +66,7 @@ namespace weather_service
             return await httpResponse.Content.ReadFromJsonAsync<Weather>(cancellationToken: stoppingToken);
         }
 
-        private async void SendEmail(string toAddress, string subject, string body)
+        private async Task SendEmail(string toAddress, string subject, string body)
         {
             try
             {
