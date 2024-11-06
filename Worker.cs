@@ -45,9 +45,10 @@ namespace weather_service
                 await foreach (Email email in emails)
                 {
                     await SendEmail(email.EmailAddress,
-                        "Weather Notification",
+                        "7'tfa Weather Notification",
                         $"Now {weather.current.temp_c:0.0}\u00B0C\n" +
-                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C");
+                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C" +
+                        "May your 7'tfa stay eternally healthy!");
                 }
 
                 Environment.Exit(0);
