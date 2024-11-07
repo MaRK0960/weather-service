@@ -47,7 +47,7 @@ namespace weather_service
                     await SendEmail(email.EmailAddress,
                         "7'tfa Weather Notification",
                         $"Now {weather.current.temp_c:0.0}\u00B0C\n" +
-                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C" +
+                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C\n" +
                         "May your 7'tfa stay eternally healthy!");
                 }
 
