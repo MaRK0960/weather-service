@@ -4,7 +4,6 @@ using Azure.Data.Tables.Models;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Mail;
-using System.Runtime.CompilerServices;
 using System.Text;
 using weather_service.Models;
 
@@ -38,18 +37,16 @@ namespace weather_service
 
                 TableClient tableClient = tableServiceClient.GetTableClient(table.Value.Name);
 
-                ConfiguredCancelableAsyncEnumerable<Email> emails = tableClient.QueryAsync<Email>(maxPerPage: 1000, cancellationToken: stoppingToken)
-                    .AsAsyncEnumerable()
+                List<string> emails = await tableClient.QueryAsync<Email>(maxPerPage: 1000, cancellationToken: stoppingToken)
+                    .Select(e => e.EmailAddress)
+                    .ToListAsync(cancellationToken: stoppingToken)
                     .ConfigureAwait(false);
 
-                await foreach (Email email in emails)
-                {
-                    await SendEmail(email.EmailAddress,
-                        "7'tfa Weather Notification",
-                        $"Now {weather.current.temp_c:0.0}\u00B0C\n" +
-                        $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C\n" +
-                        "May your 7'tfa stay eternally healthy!");
-                }
+                await SendEmail(emails,
+                    "7'tfa Weather Notification",
+                    $"Now {weather.current.temp_c:0.0}\u00B0C\n" +
+                    $"Today {day.maxtemp_c:0.0}\u00B0C/{day.mintemp_c:0.0}\u00B0C\n" +
+                    "May your 7'tfa stay eternally healthy!");
 
                 Environment.Exit(0);
             }
@@ -68,12 +65,10 @@ namespace weather_service
             return await httpResponse.Content.ReadFromJsonAsync<Weather>(cancellationToken: stoppingToken);
         }
 
-        private async Task SendEmail(string toAddress, string subject, string body)
+        private async Task SendEmail(List<string> toAddresses, string subject, string body)
         {
             try
             {
-                _logger.LogInformation(body);
-
                 MailMessage mail = new()
                 {
                     BodyEncoding = Encoding.UTF8,
@@ -83,7 +78,11 @@ namespace weather_service
                     Body = body
                 };
 
-                mail.To.Add(toAddress);
+                foreach (string email in toAddresses)
+                {
+                    mail.Bcc.Add(email);
+                }
+
                 mail.Headers.Add("Content-Type", "text/html; charset=utf-8");
 
                 SmtpClient smtpClient = new("smtp.azurecomm.net", 587)
