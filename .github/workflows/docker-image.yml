@@ -10,7 +10,7 @@ jobs:
 
   build:
 
-    runs-on: mcr.microsoft.com/dotnet/runtime:8.0-nanoserver-1809
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
